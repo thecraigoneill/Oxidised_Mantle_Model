@@ -1,0 +1,16 @@
+#! /bin/sh
+#PBS -N GOE_r10 
+#PBS -o GOEr10.o
+#PBS -e GOE_r10.e
+#PBS -l select=1:host=n0027:ncpus=24
+
+#PBS -l walltime=12800:00:00
+#PBS -q runq 
+
+#date
+cd $PBS_O_WORKDIR
+mpiexec --oversubscribe -x LD_LIBRARY_PATH -np 24 ./aspect GOE_r10.prm 
+date
+
+
+

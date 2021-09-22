@@ -1,0 +1,338 @@
+set Dimension = 2
+#set Nonlinear solver scheme = iterated Advection and Stokes
+#   
+#set Nonlinear solver scheme                = IMPES
+set Nonlinear solver scheme                = iterated Advection and Stokes 
+set Use years in output instead of seconds = true
+set CFL number 				   = 0.3
+set Maximum time step = 1e4
+set Start time				   = 0.0e9
+set End time                               = 3.5e9
+set Output directory                       = GOE_rev10
+set Adiabatic surface temperature          = 1900
+set Resume computation                     = false 
+
+set Nonlinear solver tolerance		   = 5e-5
+set Max nonlinear iterations		   = 120
+subsection Solver parameters
+  #set Linear solver tolerance                = 1e-4 
+  set Temperature solver tolerance           = 5e-6 
+  subsection Stokes solver parameters 
+      set Linear solver tolerance            = 1e-5
+      set Number of cheap Stokes solver steps = 1000
+  end
+end
+
+set Additional shared libraries            = ./libmantle_brig.so
+
+# Geometry and Mesh setup
+
+subsection Geometry model
+  set Model name = spherical shell
+
+  subsection Spherical shell
+    set Inner radius  = 3481000
+    set Outer radius  = 6336000
+    #set Opening angle = 90
+  end
+end
+
+subsection Mesh refinement
+  set Initial global refinement          = 6
+  set Initial adaptive refinement        = 1
+  set Minimum refinement level		 = 4
+  #set Initial bottom refinement          = 1,0,0,0,0
+  #set Initial top refinement             = 1,1,0,0,0
+  set Strategy                           = viscosity, boundary
+  set Refinement criteria merge operation =  max
+  set Normalize individual refinement criteria = true
+  set Time steps between mesh refinement = 0
+  set Refinement fraction = 0.8
+  set Coarsening fraction = 0.00
+end
+
+
+#Boundary conditions
+
+#subsection Boundary velocity model
+#  set Zero velocity boundary indicators       = inner
+#  set Tangential velocity boundary indicators = top, left, right
+#end
+
+subsection Boundary velocity model
+  #set Prescribed velocity boundary indicators = top:gplates
+  set Zero velocity boundary indicators = top
+  set Tangential velocity boundary indicators = bottom
+  #subsection GPlates model
+  #  set Data directory =  /home/coneill/aspect/data/boundary-velocity/gplates/
+  #  set Velocity file name = current_day.gpml
+  #  set Data file time step = 1e6
+    #set Point one = 1.5708,4.87
+    #set Point one = 0.0,2.4434
+  #  #set Point two = 1.5708,5.24
+  #  #set Point two = 0.392699,1.3089969
+  #  set Point one = 0.89,2.513 #Jp
+  #  set Point two = 1.71,4.887 #SAM
+  #  set Lithosphere thickness = 60e3
+  #  set Scale factor = 10.0
+  #end
+end
+
+
+#subsection Boundary temperature model
+#  set Fixed temperature boundary indicators = top, bottom
+#  set List of model names = spherical constant
+#
+#  subsection Spherical constant
+#    set Inner temperature = 3900
+#    set Outer temperature =  300
+#  end
+#end
+
+subsection Boundary temperature model
+  set Fixed temperature boundary indicators = top, bottom 
+  set Model name = dynamic core
+  subsection Dynamic core
+    set Inner temperature                 = 4300
+    set Outer temperature                 = 300
+    set Core density                      = 12.5e3
+    set Gravity acceleration              = 9.81
+    set CMB pressure                      = 0.14e12
+    set Initial light composition         = 0.342
+    set Max iteration                     = 30
+    set Core heat capacity                = 840
+    set K0                                = 4.111e11
+    set Alpha                             = 1.35e-5
+    set Beta composition		  = 1.05
+    set Core conductivity		  = 35
+    set Delta				  = 0.5
+    set Lh				  = 750e3
+    set Max iteration			  = 3000
+    set Rh				  = -27.7e6
+    set Rho0				  = 7.019e3
+    #set k_c                               = 50
+    subsection Geotherm parameters
+        set Tm0=1695
+        set Tm1=10.9e-12
+        set Tm2=-8.0e-24
+        set Theta=0.11
+        #set Ta1=3.5e-12
+        #set Ta2=-1.8e-24
+        set Composition dependency=true
+    end
+    subsection Radioactive heat source
+      # 100ppm K in core
+      set Number of radioactive heating elements = 1
+      set Heating rates                          = 2.92e-5
+      set Half life times                        = 1.25       #Unit: Gyr
+      set Initial concentrations                 = 0.31442962  #0.28859245
+    end
+  end
+end
+      #
+      #
+#subsection Boundary composition model
+#  set List of model names = initial composition
+#end
+
+
+subsection Compositional fields
+  set Number of fields = 1
+  set Names of fields  = brig_pc
+end
+
+# Initial conditions
+
+#subsection Initial temperature model
+#  set Model name = adiabatic
+#  subsection Adiabatic
+#    set Age top boundary layer = 200e6
+##    set Adiabatic temperature gradient         = 0.0005
+# end
+#end
+
+subsection Initial temperature model
+    #set List of model names = ascii profile
+    #set List of model names = ascii data
+    set List of model names = adiabatic 
+    #subsection Ascii data model
+    #  set Data directory = ./ICs/
+    #  set Data file name = interpolated_4.5Ga.dat 
+    #  set Data file name = interpolated_out3.dat
+    #end
+    #set List of model operators = add
+    subsection Ascii profile
+      set Data directory = ./
+      set Data file name = sol_depth.dat 
+      #set Data file name = katsura_geotherm_redone.dat
+    end
+    #
+    subsection Adiabatic
+       set Age bottom boundary layer = 10e6
+       set Age top boundary layer = 100e6 
+       set Amplitude = 60
+       set Position = center
+       set Radius = 10e3
+    end
+    #subsection Function
+    #set Variable names = x,y,z
+    #set Function constants = r=250e3,x1=3168e3
+    #set Function expression = if((x-x1)^2 + (y-x1)^2 < r^2, 20, 0)
+    #end
+end
+
+subsection Initial composition model
+  set Model name = function
+  subsection Function
+    set Variable names = x,y
+    set Function constants = r1=5701e3, r2=5501e3, r3=5301e3
+    set Function expression = if( ((x)^2 + (y)^2 < r1^2)&((x)^2 + (y)^2 >= r2^2 ), 0.999, \
+		if( (((x)^2 + (y)^2 <r2^2)&((x)^2 + (y)^2 >=r3^2)), \
+		0.79 + 0.21*(sqrt(x^2 + y^2) - r2)^2/(r2-r3)^2, 0.79)) 
+    #    set Function expression = if((x)^2 + (y)^2 < rcp^2, ((x^2 + y^2) - rcp)/rc, 0)  
+end
+end
+
+subsection Boundary composition model
+  set List of model names = initial composition
+end
+
+
+subsection Gravity model
+  set Model name = radial constant
+  subsection Radial constant
+    set Magnitude = 9.81
+  end
+end
+
+#subsection Material model
+#  set Model name = simple#
+#  subsection Simple model
+#    set Viscosity                     = 1e22
+#    set Thermal viscosity exponent    = 5.0
+#    set Reference temperature         = 1600
+#  end
+#end
+
+subsection Heating model
+  set List of model names = radioactive decay
+  subsection Radioactive decay
+    set Crust composition number      = 0
+    set Crust defined by composition  = false
+    set Crust depth                   = 0
+    set Half decay times              = 1.25e9, 14.0e9, 4.47e9, 0.704e9
+    set Heating rates                 = 2.92e-5, 2.64e-5, 9.46e-5, 59.9e-5
+    set Initial concentrations mantle = 0.2474395, 0.0749463, 0.0318872, 0.0094765
+    #set Initial concentrations mantle = 0.4474395, 0.1549463, 0.0618872, 0.0184765
+    set Initial concentrations crust  = 0.4474395, 0.1549463, 0.0618872, 0.0184765
+    set Number of elements            = 4
+  end
+end
+
+
+subsection Material model
+  set Model name = MantleHack 
+  subsection MantleHack
+    set Densities = 3500
+    set Thermal expansivities = 3.5e-5
+    set exps_decrease = 0.9
+    set Thermal diffusivity = 0.8e-6
+    set Heat capacity = 1.25e3
+
+    set Reference strain rate = 6.4e-16
+    set Reference temperature = 293
+    set Minimum strain rate = 5e-17                             ## Value used in paper is 1.4e-20
+
+    set visc_min = 1.0e19
+    set visc_max = 6.0e23
+
+    set Cohesive strength of rocks at the surface = 3e6
+    set Coefficient of yield stress increase with pressure = 0.3
+    set Yield stress max = 1e9
+
+    # Upper mantle - Wet diffusion, HK2003
+    set UM Preexponential constant for viscous rheology law = 1e14  # Wett diff constant COH, HK2003 
+    set Upper mantle Activation energies = 150e3   #HK2003
+    set Upper mantle Activation volume = 2.e-6
+
+    set Stress exponents for viscous rheology = 1
+    set Stress exponents for plastic rheology = 1
+    #Upper mantle - Solidus (Stixrude)
+    set UM_sol_a = 1.49419506e+03  
+    set UM_sol_b = 3.58738385e-03 
+    set UM_sol_c = -5.24082197e-09  
+    set UM_sol_d = 2.91793473e-15
+    # Upper mantle - Wett diff constant COH, HK2003 
+    #set UM Preexponential constant for viscous rheology law = 1e6 # Wett diff constant COH, HK2003 
+    #set Upper mantle Activation energies = 335e3   #HK2003
+    #set Upper mantle Activation volume = 4.e-6
+
+    # Lower mantle
+    set LM Preexponential constant for viscous rheology law = 3.003e15 #3.33e15
+    set Lower mantle Activation energies = 160e3  #150e3
+    set Lower mantle Activation volume = 1.94e-6 #2.0
+
+    # Lower mantle - Bridgmanite/Ferropericlase mix
+    set Brig_sol_a = 1.77157968e+03
+    set Brig_sol_b = 4.58499793e-04
+    set Brig_sol_c = 3.27527226e-09
+    set Brig_sol_d =  -2.81678963e-15
+    set Brig_sol_e = 9.41736767e-22
+    set Brig_sol_f =  -1.12730720e-28 
+
+    set Brig_D0 = 2.7e-10  #Was2.7e-7, 2.7e-8 in keynote doc. Yamazaki 2000 = 2.7e-10
+    set Brig_g0 = 16
+    set Brig_om = 27e-6
+    set Brig_gr = 1.0e-3
+
+    set Ferr_sol_a = -4.58110348e+04
+    set Ferr_sol_b = 1.89251455e-01
+    set Ferr_sol_c = -2.88098791e-07
+    set Ferr_sol_d =  2.23942098e-13
+    set Ferr_sol_e =-9.40084947e-20
+    set Ferr_sol_f = 2.02972905e-26
+    set Ferr_sol_g = -1.76813383e-33 
+
+    set Ferr_D0 = 9.04e-9
+    set Ferr_g0 = 13
+    set Ferr_om = 27e-6
+    set Ferr_gr = 1.0e-3
+
+    set Ji = -0.15
+    set Bdg_Dens_multiplier = 0.25
+    #set exps_decrease = 0.8 
+  end
+end
+
+subsection Postprocess
+  set List of postprocessors = core statistics, visualization, composition statistics, velocity statistics, temperature statistics, heat flux statistics, depth average
+
+  subsection Visualization
+    set Output format                 = hdf5
+    set Time between graphical output = 1e6
+    set Interpolate output            = true  
+    set List of output variables      = error indicator, viscosity, shear stress, strain rate, density, nonadiabatic temperature
+    set Number of grouped files       = 1
+    set Time between graphical output = 0.5e6 
+  end
+
+  subsection Dynamic core statistics
+    set Excess entropy only = false
+  end
+
+  subsection Depth average
+    set Time between graphical output = 0.5e6
+  end
+end
+
+subsection Checkpointing
+   set Time between checkpoint = 2000
+end
+
+subsection Termination criteria
+  set Termination criteria = end step
+  set End step = 50000
+end
+
+
+
